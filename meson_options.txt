@@ -1,0 +1,6 @@
+option(
+    'sys-root',
+    type : 'string',
+    value : '',
+    description: 'Path to target system root compilation directory'
+)
