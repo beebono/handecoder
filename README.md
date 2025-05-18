@@ -21,39 +21,36 @@ Currently intended for use with:
 Currently tested with:
 - None yet...
 
-## Dependencies
+## Build dependencies
 
 Ubuntu/Debian:
 ```bash
-sudo apt-get install build-essential meson ninja-build cmake libva-dev libdrm-dev
+sudo apt-get install build-essential cmake
 ```
-
-It is also highly recommended to install the linux kernel headers for your target system.
 
 ## Building
 
 1. Clone the repository and its submodules:
 
 ```bash
-git clone --recursive https://github.com/yourusername/handecoder.git
+git clone --recursive https://github.com/beebono/handecoder.git
 cd handecoder
 ```
-2. Setup the meson build system:
+
+2. Run the CMake build system:
 
     2a. For native builds:
 ```bash
-meson setup [build_directory]
+mkdir ./build && cd build
+cmake ../ -DCMAKE_BUILD_TYPE=Release
+cmake --build .
 ```
 
     2b. For cross-compile builds:
 ```bash
-meson setup [build_directory] --cross-file=[path_to_cross_file] (optional: -Dsys-root=[path_to_sysroot])
-```
-
-3. Build with ninja:
-
-```bash
-ninja -C [build_directory]
+mkdir ./build && cd build
+cmake ../ -CMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file]
+cmake --build .
 ```
 
 The resulting libraries will be in the specified build directory under `[build_directory]/lib`.
@@ -71,20 +68,17 @@ export LD_PRELOAD=/path/to/libhandecoder.so
 
 This project uses multiple licenses:
 - The wrapper code (this repository's code) is MIT licensed. See [LICENSE](LICENSE) file.
-- The FFmpeg libraries (in `external/ffmpeg/`) are LGPL v2.1+ licensed. See [FFmpeg's license](https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md) for details.
-- The libva-v4l2-request library (in `external/libva-v4l2-request/`) is LGPL v2.1+ and MIT licensed. See [libva-v4l2-request's license](https://github.com/bootlin/libva-v4l2-request/blob/master/COPYING) for details.
-- The Rockchip Media Process Platform (rkmpp) library (in `external/mpp/`) is Apache-2.0 and MIT licensed. See [rkmpp's license folder](https://github.com/rockchip-linux/mpp/blob/develop/LICENSES) for details.
+- The FFmpeg libraries are LGPL v2.1+ licensed. See [FFmpeg's license](https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md) for details.
+- The Rockchip Media Process Platform (rkmpp) library is Apache-2.0 and MIT licensed. See [rkmpp's license folder](https://github.com/rockchip-linux/mpp/blob/develop/LICENSES) for details.
 
 **Important:** When using this library, you must comply with:
 1. MIT license for the wrapper code
 2. LGPL v2.1+ license for FFmpeg components
-3. LGPL v2.1+ and MIT license for libva-v4l2-request
 4. Apache-2.0 and MIT license for rkmpp
 
 ## Acknowledgments
 
 - The [FFmpeg project](https://www.ffmpeg.org/) and its contributors
-- [@bootlin](https://github.com/bootlin) for their work on libva-v4l2-request
 - [@jernejsk](https://github.com/jernejsk) for their patches regarding v4l2-request usage in FFmpeg
 - [@rockchip-linux](https://github.com/rockchip-linux) for their work on the Rockchip Media Process Platform (rkmpp)
 - Those with the patience to wait for this project's continued development!

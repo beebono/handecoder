@@ -31,7 +31,7 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
             const AVCodec *v4l2_codec = avcodec_find_decoder_by_name("h264_v4l2m2m");
             codec = v4l2_codec;
         } else if (current_device == DEVICE_TYPE_ALLWINNER) {
-            const AVCodec *cedrus_codec = avcodec_find_decoder_by_name("h264_cedrus");
+            const AVCodec *cedrus_codec = avcodec_find_decoder_by_name("h264_v4l2request");
             codec = cedrus_codec;
         } else if (current_device == DEVICE_TYPE_ROCKCHIP) {
             const AVCodec *rkmpp_codec = avcodec_find_decoder_by_name("h264_rkmpp");

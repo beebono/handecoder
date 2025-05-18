@@ -9,7 +9,7 @@ FEATURE_SETS="v4l2-drmprime v4l2-request"
 
 SCRIPT_DIR="$(dirname $(realpath $0))"
 PROJECT_ROOT="$(realpath ${SCRIPT_DIR}/..)"
-FFMPEG_DIR="${PROJECT_ROOT}/subprojects/ffmpeg"
+FFMPEG_DIR=$1
 
 create_patch() {
   FEATURE_SET="$1"
