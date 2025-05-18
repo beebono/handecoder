@@ -39,20 +39,13 @@ cd handecoder
 
 2. Run the CMake build system:
 
-    2a. For native builds:
 ```bash
 mkdir ./build && cd build
 cmake ../ -DCMAKE_BUILD_TYPE=Release
 cmake --build . --target install
 ```
 
-    2b. For cross-compile builds:
-```bash
-mkdir ./build && cd build
-cmake ../ -CMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file]
-cmake --build . --target install
-```
-
+To Cross-Compile, add your CMake Toolchain file to the first cmake command. (-DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file])
 The resulting libraries will be in the specified build directory under `[build_directory]/lib`.
 
 ## Usage
