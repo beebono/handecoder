@@ -33,7 +33,7 @@ sudo apt-get install build-essential cmake libva-dev libdrm-dev libudev-dev
 1. Clone the repository and its submodules:
 
 ```bash
-git clone --recursive https://github.com/beebono/handecoder.git
+git clone https://github.com/beebono/handecoder.git
 cd handecoder
 ```
 
