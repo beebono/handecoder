@@ -14,7 +14,15 @@ static void __attribute__((constructor)) init_wrapper(void) {
     Screen*  s = DefaultScreenOfDisplay(d);
 
     struct stat st;
-    if (stat("/dev/video0", &st) == 0) {
+    if (stat("/dev/media0", &st) == 0) {
+        int fd = open("/dev/media0", O_RDWR, 0);
+        if (fd >= 0) {
+            current_device = DEVICE_TYPE_V4L2REQ;
+            padded_width = (s->width + 31) & ~31;
+            padded_height = (s->height + 31) & ~31;
+            close(fd);
+        }
+    } else if (stat("/dev/video0", &st) == 0) {
         int fd = open("/dev/video0", O_RDWR, 0);
         if (fd >= 0) {
             current_device = DEVICE_TYPE_V4L2;

@@ -14,6 +14,7 @@
 
 enum device_type {
     DEVICE_TYPE_NONE,
+    DEVICE_TYPE_V4L2REQ,
     DEVICE_TYPE_V4L2,
     DEVICE_TYPE_ROCKCHIP
 };

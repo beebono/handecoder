@@ -52,7 +52,11 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
 
     if (codec && is_h264_sw_decoder(codec)) {
         avcodec_free_context(&avctx);
-        if (current_device == DEVICE_TYPE_V4L2) {
+        if (current_device == DEVICE_TYPE_V4L2REQ) {
+            codec = avcodec_find_decoder_by_name("h264");
+            avctx = avcodec_alloc_context3(codec);
+            av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_V4L2REQUEST, NULL, NULL, 0);
+        } else if (current_device == DEVICE_TYPE_V4L2) {
             codec = avcodec_find_decoder_by_name("h264_v4l2m2m");
             avctx = avcodec_alloc_context3(codec);
             av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_DRM, "/dev/dri/card0", NULL, 0);
