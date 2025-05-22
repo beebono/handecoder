@@ -17,7 +17,7 @@ static void __attribute__((constructor)) init_wrapper(void) {
     if (stat("/dev/video0", &st) == 0) {
         int fd = open("/dev/video0", O_RDWR, 0);
         if (fd >= 0) {
-            current_device = DEVICE_TYPE_SNAPDRAGON;
+            current_device = DEVICE_TYPE_V4L2;
             padded_width = (s->width + 31) & ~31;
             padded_height = (s->height + 31) & ~31;
             close(fd);
