@@ -22,12 +22,6 @@ static void __attribute__((constructor)) init_wrapper(void) {
             padded_height = (s->height + 31) & ~31;
             close(fd);
         }
-    } else if (stat("/dev/cedar_dev", &st) == 0) {
-        int fd = open("/dev/cedar_dev", O_RDWR, 0);
-        if (fd >= 0) {
-            current_device = DEVICE_TYPE_ALLWINNER;
-            close(fd);
-        }
     } else if (stat("/dev/mpp_service", &st) == 0) {
         int fd = open("/dev/mpp_service", O_RDWR, 0);
         if (fd >= 0) {
