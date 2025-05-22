@@ -1,14 +1,8 @@
 #define _GNU_SOURCE
 
 #include "hdcd-common.h"
-#include <sys/mman.h>
-#include <sys/ioctl.h>
 #include <sys/syscall.h>
-#include <drm/msm_drm.h>
-#include <drm/panfrost_drm.h>
-#include <linux/dma-heap.h>
 #include <libavcodec/avcodec.h>
-#include <libavutil/pixdesc.h>
 
 #define DMA_HEAP_PATH "/dev/dma_heap/vidbuf_cached"
 
@@ -42,7 +36,6 @@ enum AVPixelFormat get_hw_format(AVCodecContext *avctx, const enum AVPixelFormat
         }
         pix_fmts++;
     }
-    fprintf(stderr, "Failed to get DRM_PRIME as a pix_fmt...\n");
     return AV_PIX_FMT_NONE;
 }
 
@@ -65,15 +58,12 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
             av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_DRM, "/dev/dri/card0", NULL, 0);
             avctx->get_format = get_hw_format;
             avctx->pix_fmt = AV_PIX_FMT_DRM_PRIME;
+            avctx->width = padded_width;
+            avctx->height = padded_height;
         } else if (current_device == DEVICE_TYPE_ROCKCHIP) {
             codec = avcodec_find_decoder_by_name("h264_rkmpp");
             avctx = avcodec_alloc_context3(codec);
-        } else if (current_device == DEVICE_TYPE_ALLWINNER) {
-            codec = avcodec_find_decoder_by_name("h264");
-            avctx = avcodec_alloc_context3(codec);
         }
-        avctx->width = padded_width;
-        avctx->height = padded_height;
     }
     return real_avcodec_open2(avctx, codec, options);
 }
@@ -88,6 +78,7 @@ int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame) {
         if (ret < 0) {
             return ret;
         }
+        // Do this garbage to fix an off-by-one in Steam Link caused by changing ffmpeg libararies...
         if (frame->format == AV_PIX_FMT_DRM_PRIME) {
             frame->format = AV_PIX_FMT_OPENCL;
         }
@@ -101,6 +92,7 @@ AVBufferRef *av_buffer_ref(const AVBufferRef *buf) {
         real_av_buffer_ref = dlsym(RTLD_NEXT, "av_buffer_ref");
     }
 
+    // And this because Steam Link just needs it??????
     if (!buf){
         return 0;
     }
