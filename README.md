@@ -1,6 +1,6 @@
 # HanDecoder Wrapper Library (libhandecoder)
 
-A wrapper library that enables and forces the use of H264 hardware video decoding when using FFmpeg, specifically tailored for platforms that either support it natively or Allwinner/Rockchip SoCs.
+A wrapper library that enables and forces the use of H264 hardware video decoding when using FFmpeg, specifically tailored for platforms that either support V4L2M2M natively or Rockchip SoCs. (Maybe more in the future!)
 
 ## Overview
 
@@ -8,18 +8,18 @@ This library wraps a precompiled program with an FFmpeg implementation that prov
 
 - Simplified integration with pre-compiled programs that use FFmpeg for H264 software video decoding.
 - Hardware-accelerated H264 video decoding on platforms that support V4L2 M2M natively.
-- Integration of Allwinner SoC support with the cedar video engine via libva-v4l2-request.
-- Integration of Rockchip SoC support with the rkmpp video engine via rkmpp.
+- Integration of Rockchip SoC support with the MPP video engine via h264_rkmpp.
 
 ## Device Support
 
 Currently intended for use with:
 - Linux-based systems with V4L2 M2M support.
-- Allwinner SoCs with the cedar video engine.
 - Rockchip SoCs with the rkmpp video engine.
 
-Currently tested with:
-- None yet...
+Currently tested and working with:
+- RK3566 (Miyoo Flip, Powkiddy X55)
+- Qualcomm SD865 (Retroid Pocket MiniV2/Flip)
+- Qualcomm SD8Gen2 (Odin 2)
 
 ## Build dependencies
 
@@ -46,6 +46,8 @@ cmake --build . --target install
 ```
 
 To Cross-Compile, add your CMake Toolchain file to the first cmake command. (-DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file])
+    Also make sure to uncomment the the last line of CONFIGURE_COMMAND in CMakeLists.txt!
+
 The resulting libraries will be in the specified build directory under `[build_directory]/lib`.
 
 ## Usage
@@ -73,5 +75,6 @@ This project uses multiple licenses:
 
 - The [FFmpeg project](https://www.ffmpeg.org/) and its contributors
 - [@jernejsk](https://github.com/jernejsk) for their patches regarding v4l2-request usage in FFmpeg
+- [@nyanmisaka](https://github.com/nyanmisaka) for their work on MPP compaibility with FFmpeg
 - [@rockchip-linux](https://github.com/rockchip-linux) for their work on the Rockchip Media Process Platform (rkmpp)
-- Those with the patience to wait for this project's continued development!
+- Those with the (incredible) patience to wait for this project's continued development!

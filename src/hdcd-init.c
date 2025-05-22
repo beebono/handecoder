@@ -1,56 +1,44 @@
 #define _GNU_SOURCE
 
 #include "hdcd-common.h"
+#include <X11/Xlib.h>
 #include <dirent.h>
 
 enum device_type current_device;
+int padded_width, padded_height;
 
-static char* get_library_path(void) {
-    Dl_info dl_info;
-    if (dladdr((void*)get_library_path, &dl_info) == 0) {
-        return NULL;
-    }
-
-    char* ffmpeg_path = malloc(strlen(dl_info.dli_fname) + 16);
-    return ffmpeg_path;
-}
+int open(const char *path, int flags, __u32 mode);
 
 static void __attribute__((constructor)) init_wrapper(void) {
-    char *ffmpeg_path = getenv("FFMPEG_PATH");
-    char *default_path = NULL;
-    
-    if (!ffmpeg_path) {
-        default_path = get_library_path();
-        ffmpeg_path = default_path ? default_path : "/usr/lib";
-    }
-    
-    free(default_path);
-    init_ffmpeg(ffmpeg_path);
+    Display* d = XOpenDisplay(NULL);
+    Screen*  s = DefaultScreenOfDisplay(d);
 
     struct stat st;
     if (stat("/dev/video0", &st) == 0) {
-        int fd = open("/dev/video0", O_RDWR);
+        int fd = open("/dev/video0", O_RDWR, 0);
         if (fd >= 0) {
-            current_device = DEVICE_TYPE_V4L2;
+            current_device = DEVICE_TYPE_SNAPDRAGON;
+            padded_width = (s->width + 31) & ~31;
+            padded_height = (s->height + 31) & ~31;
             close(fd);
         }
-    } else if (stat("/dev/dev_cedar", &st) == 0) {
-        int fd = open("/dev/dev_cedar", O_RDWR);
+    } else if (stat("/dev/cedar_dev", &st) == 0) {
+        int fd = open("/dev/cedar_dev", O_RDWR, 0);
         if (fd >= 0) {
             current_device = DEVICE_TYPE_ALLWINNER;
             close(fd);
         }
     } else if (stat("/dev/mpp_service", &st) == 0) {
-        int fd = open("/dev/mpp_service", O_RDWR);
+        int fd = open("/dev/mpp_service", O_RDWR, 0);
         if (fd >= 0) {
             current_device = DEVICE_TYPE_ROCKCHIP;
+            padded_width = (s->width + 15) & ~15;
+            padded_height = (s->height + 15) & ~15;
             close(fd);
         }
     } else {
         current_device = DEVICE_TYPE_NONE;
     }
-}
 
-static void __attribute__((destructor)) cleanup_wrapper(void) {
-    cleanup_ffmpeg();
+    XCloseDisplay(d);
 }
