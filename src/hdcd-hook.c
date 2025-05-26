@@ -89,7 +89,7 @@ int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame) {
             frame->format = AV_PIX_FMT_OPENCL;
         }
         if (frame->format == AV_PIX_FMT_YUV420P) {
-            AVFrame *tmpframe = av_frame_alloc;
+            AVFrame *tmpframe = av_frame_alloc();
             av_frame_move_ref(tmpframe, frame);
             convert2drm(tmpframe, frame);
             av_frame_free(&tmpframe);
