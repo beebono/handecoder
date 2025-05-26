@@ -16,10 +16,7 @@ This library wraps a precompiled program with an FFmpeg implementation that prov
 Currently intended for use with:
 - Linux-based systems with V4L2 M2M support.
 - Rockchip SoCs with the MPP video engine.
-- Allwinner SoCs with the cedar video engine.
-
-Currently tested and working with:
-- Allwinner H700 devices running KNULLI
+- Allwinner SoCs with the cedar video engine and a Mali GPU.
 
 ## Build dependencies
 
@@ -48,7 +45,7 @@ cmake --build . --target install
 To Cross-Compile, add your CMake Toolchain file to the first cmake command. (-DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file])
     Also make sure to uncomment the the last line of CONFIGURE_COMMAND in CMakeLists.txt!
 
-The resulting libraries will be in the specified build directory under `[build_directory]/lib`.
+The resulting libraries will be in the specified build directory under `./build/lib`.
 
 ## Usage
 
