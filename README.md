@@ -19,7 +19,7 @@ Currently intended for use with:
 - Allwinner SoCs with the cedar video engine.
 
 Currently tested and working with:
-- None yet...
+- Allwinner H700 devices running KNULLI
 
 ## Build dependencies
 
@@ -52,9 +52,11 @@ The resulting libraries will be in the specified build directory under `[build_d
 
 ## Usage
 
-This wrapper library is intended to be used with LD_PRELOAD to override the FFmpeg libraries being loaded and the related function calls. This is done by setting the LD_PRELOAD environment variable to the path of the wrapper library. For example:
+This wrapper library is intended to be used with LD_PRELOAD to override the FFmpeg function calls. This is done by setting the LD_PRELOAD environment variable to the path of the wrapper library.
+You are also REQUIRED to set the environment variable HDCD_RESOLUTION to your screen's resolution for proper compatibility. This can be automated with a shell script if you are so inclined.
 
 ```bash
+export HDCD_RESOLUTION=1280x720
 export LD_PRELOAD=/path/to/libhandecoder.so
 ./your_program
 ```
