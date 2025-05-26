@@ -10,7 +10,7 @@ int open(const char *path, int flags, __u32 mode);
 static void __attribute__((constructor)) init_wrapper(void) {
     const char *resolution = getenv("HDCD_RESOLUTION");
     int width = 640, height = 480;
-    if (resolution == "unknown") {
+    if (!resolution || strcmp(resolution, "unknown") == 0) {
         fprintf(stderr, "Couldn't get resolution from environment. Using 640x480...\n");
     } else {
         sscanf(resolution, "%dx%d", &width, &height);
@@ -60,8 +60,9 @@ static void __attribute__((constructor)) init_wrapper(void) {
             padded_width = width;
             padded_height = height;
             close(fd);
+        }
     } else {
             current_device = DEVICE_TYPE_NONE;
-        }
     }
 }
+

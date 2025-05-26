@@ -131,5 +131,5 @@ void convert2drm(const AVFrame *src, AVFrame *dst) {
     dst->crop_left = src->crop_left;
     dst->crop_right = src->crop_right;
     dst->data[0] = (uint8_t*)desc;
-    dst->buf[0] = av_buffer_create((uint8_t*)dst->data[0], sizeof(desc), buffer_used, buffer, 0);
+    dst->buf[0] = av_buffer_create((uint8_t*)desc, sizeof(*desc), buffer_used, buffer, 0);
 }
