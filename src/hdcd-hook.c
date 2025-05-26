@@ -1,13 +1,12 @@
 #define _GNU_SOURCE
 
 #include "hdcd-common.h"
-#include <sys/syscall.h>
-#include <libavcodec/avcodec.h>
 
 #define DMA_HEAP_PATH "/dev/dma_heap/vidbuf_cached"
 
 extern int current_device, padded_width, padded_height;
 
+int convert2drm(const AVFrame *src, AVFrame *dst);
 static int (*real_avcodec_open2)(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
 static int (*real_avcodec_receive_frame)(AVCodecContext *avctx, const AVFrame *frame);
 static AVBufferRef* (*real_av_buffer_ref)(const AVBufferRef *buf);
@@ -29,7 +28,7 @@ int open(const char *path, int flags, __u32 mode) {
     return open64(path, flags, mode);
 }
 
-enum AVPixelFormat get_hw_format(AVCodecContext *avctx, const enum AVPixelFormat *pix_fmts) {
+enum AVPixelFormat get_drm_format(AVCodecContext *avctx, const enum AVPixelFormat *pix_fmts) {
     while (*pix_fmts != -1) {
         if (*pix_fmts == AV_PIX_FMT_DRM_PRIME) {
             return *pix_fmts;
@@ -50,7 +49,7 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
         real_avcodec_open2 = dlsym(RTLD_NEXT, "avcodec_open2");
     }
 
-    if (codec && is_h264_sw_decoder(codec)) {
+    if (codec && is_h264_sw_decoder(codec) && current_device != DEVICE_TYPE_NONE) {
         avcodec_free_context(&avctx);
         if (current_device == DEVICE_TYPE_V4L2REQ) {
             codec = avcodec_find_decoder_by_name("h264");
@@ -60,12 +59,15 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
             codec = avcodec_find_decoder_by_name("h264_v4l2m2m");
             avctx = avcodec_alloc_context3(codec);
             av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_DRM, "/dev/dri/card0", NULL, 0);
-            avctx->get_format = get_hw_format;
+            avctx->get_format = get_drm_format;
             avctx->pix_fmt = AV_PIX_FMT_DRM_PRIME;
             avctx->width = padded_width;
             avctx->height = padded_height;
         } else if (current_device == DEVICE_TYPE_ROCKCHIP) {
             codec = avcodec_find_decoder_by_name("h264_rkmpp");
+            avctx = avcodec_alloc_context3(codec);
+        } else if (current_device == DEVICE_TYPE_ALLWINNER ||current_device == DEVICE_TYPE_SWCOMPAT) {
+            codec = avcodec_find_decoder_by_name("h264");
             avctx = avcodec_alloc_context3(codec);
         }
     }
@@ -85,6 +87,14 @@ int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame) {
         // Do this garbage to fix an off-by-one in Steam Link caused by changing ffmpeg libararies...
         if (frame->format == AV_PIX_FMT_DRM_PRIME) {
             frame->format = AV_PIX_FMT_OPENCL;
+        }
+        if (frame->format == AV_PIX_FMT_YUV420P) {
+            static AVFrame *tmpframe = NULL;
+            if (!tmpframe) {
+                tmpframe = av_frame_alloc();
+            }
+            av_frame_move_ref(tmpframe, frame);
+            convert2drm(tmpframe, frame);
         }
         return 0;
     }

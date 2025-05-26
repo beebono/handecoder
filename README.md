@@ -1,25 +1,25 @@
 # HanDecoder Wrapper Library (libhandecoder)
 
-A wrapper library that enables and forces the use of H264 hardware video decoding when using FFmpeg, specifically tailored for platforms that either support V4L2M2M natively or Rockchip SoCs. (Maybe more in the future!)
+A wrapper library that enables and forces the use of H264 hardware video decoding when using FFmpeg, specifically tailored for platforms that either support V4L2M2M natively or Allwinner/Rockchip SoCs. (Maybe more in the future!)
 
 ## Overview
 
 This library wraps a precompiled program with an FFmpeg implementation that provides the following benefits:
 
-- Simplified integration with pre-compiled programs that use FFmpeg for H264 software video decoding.
+- Simplified integration with certain pre-compiled programs that use FFmpeg for H264 software video decoding.
 - Hardware-accelerated H264 video decoding on platforms that support V4L2 M2M natively.
 - Integration of Rockchip SoC support with the MPP video engine via h264_rkmpp.
+- Graceful fallback to software-based H264 video decoding, wrapping the frames in DRM_PRIME format for compatibility.
 
 ## Device Support
 
 Currently intended for use with:
 - Linux-based systems with V4L2 M2M support.
-- Rockchip SoCs with the rkmpp video engine.
+- Rockchip SoCs with the MPP video engine.
+- Allwinner SoCs with the cedar video engine.
 
 Currently tested and working with:
-- RK3566 (Miyoo Flip, Powkiddy X55)
-- Qualcomm SD865 (Retroid Pocket MiniV2/Flip)
-- Qualcomm SD8Gen2 (Odin 2)
+- None yet...
 
 ## Build dependencies
 
@@ -58,23 +58,3 @@ This wrapper library is intended to be used with LD_PRELOAD to override the FFmp
 export LD_PRELOAD=/path/to/libhandecoder.so
 ./your_program
 ```
-
-## Licensing
-
-This project uses multiple licenses:
-- The wrapper code (this repository's code) is MIT licensed. See [LICENSE](LICENSE) file.
-- The FFmpeg libraries are LGPL v2.1+ licensed. See [FFmpeg's license](https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md) for details.
-- The Rockchip Media Process Platform (rkmpp) library is Apache-2.0 and MIT licensed. See [rkmpp's license folder](https://github.com/rockchip-linux/mpp/blob/develop/LICENSES) for details.
-
-**Important:** When using this library, you must comply with:
-1. MIT license for the wrapper code
-2. LGPL v2.1+ license for FFmpeg components
-4. Apache-2.0 and MIT license for rkmpp
-
-## Acknowledgments
-
-- The [FFmpeg project](https://www.ffmpeg.org/) and its contributors
-- [@jernejsk](https://github.com/jernejsk) for their patches regarding v4l2-request usage in FFmpeg
-- [@nyanmisaka](https://github.com/nyanmisaka) for their work on MPP compaibility with FFmpeg
-- [@rockchip-linux](https://github.com/rockchip-linux) for their work on the Rockchip Media Process Platform (rkmpp)
-- Those with the (incredible) patience to wait for this project's continued development!
