@@ -21,18 +21,17 @@ static void __attribute__((constructor)) init_wrapper(void) {
 
     struct stat st;
     if (stat("/dev/video0", &st) == 0) {
+        const char *dev_path = NULL;
         if (stat("/dev/media0", &st) == 0) {
-            int fd = open("/dev/media0", O_RDWR, 0);
-            if (fd >= 0) {
-                current_device = DEVICE_TYPE_V4L2REQ;
-                padded_width = (width + 31) & ~31;
-                padded_height = (height + 31) & ~31;
-                close(fd);
-            }
-        }
-        int fd = open("/dev/video0", O_RDWR, 0);
-        if (fd >= 0) {
+            dev_path = "/dev/media0";
+            current_device = DEVICE_TYPE_V4L2REQ;
+        } else {
+            dev_path = "/dev/video0";
             current_device = DEVICE_TYPE_V4L2;
+        }
+
+        int fd = open(dev_path, O_RDWR, 0);
+        if (fd >= 0) {
             padded_width = (width + 31) & ~31;
             padded_height = (height + 31) & ~31;
             close(fd);
@@ -62,7 +61,7 @@ static void __attribute__((constructor)) init_wrapper(void) {
             close(fd);
         }
     } else {
-            current_device = DEVICE_TYPE_NONE;
+        current_device = DEVICE_TYPE_NONE;
     }
 }
 
