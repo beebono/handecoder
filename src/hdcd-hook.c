@@ -61,8 +61,6 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
             av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_DRM, "/dev/dri/card0", NULL, 0);
             avctx->get_format = get_drm_format;
             avctx->pix_fmt = AV_PIX_FMT_DRM_PRIME;
-            avctx->width = padded_width;
-            avctx->height = padded_height;
         } else if (current_device == DEVICE_TYPE_ROCKCHIP) {
             codec = avcodec_find_decoder_by_name("h264_rkmpp");
             avctx = avcodec_alloc_context3(codec);
@@ -70,6 +68,8 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
             codec = avcodec_find_decoder_by_name("h264");
             avctx = avcodec_alloc_context3(codec);
         }
+        avctx->width = padded_width;
+        avctx->height = padded_height;
     }
     return real_avcodec_open2(avctx, codec, options);
 }

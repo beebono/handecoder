@@ -10,13 +10,10 @@ int open(const char *path, int flags, __u32 mode);
 static void __attribute__((constructor)) init_wrapper(void) {
     const char *resolution = getenv("HDCD_RESOLUTION");
     int width = 640, height = 480;
-    if (!resolution || strcmp(resolution, "unknown") == 0) {
+    if (!resolution) {
         fprintf(stderr, "Couldn't get resolution from environment. Using 640x480...\n");
     } else {
         sscanf(resolution, "%dx%d", &width, &height);
-        if (height > width) {
-            sscanf(resolution, "%dx%d", &height, &width);
-        }
     }
 
     struct stat st;
@@ -32,36 +29,37 @@ static void __attribute__((constructor)) init_wrapper(void) {
 
         int fd = open(dev_path, O_RDWR, 0);
         if (fd >= 0) {
-            padded_width = (width + 31) & ~31;
-            padded_height = (height + 31) & ~31;
             close(fd);
         }
     } else if (stat("/dev/mpp_service", &st) == 0) {
         int fd = open("/dev/mpp_service", O_RDWR, 0);
         if (fd >= 0) {
             current_device = DEVICE_TYPE_ROCKCHIP;
-            padded_width = (width + 15) & ~15;
-            padded_height = (height + 15) & ~15;
             close(fd);
         }
     } else if (stat("/dev/cedar_dev", &st) == 0) {
         int fd = open("/dev/cedar_dev", O_RDWR, 0);
         if (fd >= 0) {
             current_device = DEVICE_TYPE_ALLWINNER;
-            padded_width = width;
-            padded_height = height;
             close(fd);
         }
     } else if (stat("/dev/dri/card0", &st) == 0) {
         int fd = open("/dev/dri/card0", O_RDWR, 0);
         if (fd >= 0) {
             current_device = DEVICE_TYPE_SWCOMPAT;
-            padded_width = width;
-            padded_height = height;
             close(fd);
         }
     } else {
         current_device = DEVICE_TYPE_NONE;
+    }
+    int sixteen_nine_width = ceil(height * 16.0 / 9);
+    int sixteen_nine_height = ceil(width * 9.0 / 16);
+    if (sixteen_nine_width <= width ) {
+        padded_width = sixteen_nine_width;
+        padded_height = height;
+    } else if (sixteen_nine_height <= height) {
+        padded_width = width;
+        padded_height = sixteen_nine_height;
     }
 }
 
