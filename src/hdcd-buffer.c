@@ -6,7 +6,6 @@
 #include <drm/drm_fourcc.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <stdbool.h>
 #include <gbm.h>
 
 #define ALIGN_UP(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
@@ -48,6 +47,7 @@ void buffer_pool_init(struct dma_pool *pool, size_t size) {
             pool->buffers[i].size = size;
             pool->buffers[i].mapping = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_data.fd, 0);
             pool->buffers[i].in_use = false;
+            fprintf(stderr, "DEBUG: buffer: %d fd: %d size: %ld mapping: %p\n", i, fd_data.fd, size, pool->buffers[i].mapping);
         }
     } else if (current_device == DEVICE_TYPE_SWCOMPAT) {
         int drm_fd = open("/dev/dri/card0", O_RDWR, 0);

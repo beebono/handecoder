@@ -4,12 +4,14 @@
 
 enum device_type current_device;
 int padded_width, padded_height;
+bool is_a133;
 
 int open(const char *path, int flags, __u32 mode);
 
 static void __attribute__((constructor)) init_wrapper(void) {
     const char *resolution = getenv("HDCD_RESOLUTION");
     int width = 640, height = 480;
+    is_a133 = false;
     if (!resolution) {
         fprintf(stderr, "Couldn't get resolution from environment. Using 640x480...\n");
     } else {
@@ -41,7 +43,11 @@ static void __attribute__((constructor)) init_wrapper(void) {
         int fd = open("/dev/cedar_dev", O_RDWR, 0);
         if (fd >= 0) {
             current_device = DEVICE_TYPE_ALLWINNER;
+            const char *devname = getenv("HDCD_DEVNAME");
             close(fd);
+            if (strcasestr(devname, "trim") != NULL) {
+                is_a133 = true;
+            }
         }
     } else if (stat("/dev/dri/card0", &st) == 0) {
         int fd = open("/dev/dri/card0", O_RDWR, 0);
