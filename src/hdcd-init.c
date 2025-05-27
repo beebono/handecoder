@@ -63,16 +63,17 @@ static void __attribute__((constructor)) init_wrapper(void) {
     if (stat("/dev/video0", &st) == 0) {
         const char *dev_path = NULL;
         if (stat("/dev/media0", &st) == 0) {
-            dev_path = "/dev/media0";
-            current_device = DEVICE_TYPE_V4L2REQ;
+            int fd = open("/dev/media0", O_RDWR, 0);
+            if (fd >= 0) {
+                current_device = DEVICE_TYPE_V4L2REQ;
+                close(fd);
+            }
         } else {
-            dev_path = "/dev/video0";
-            current_device = DEVICE_TYPE_V4L2;
-        }
-
-        int fd = open(dev_path, O_RDWR, 0);
-        if (fd >= 0) {
-            close(fd);
+            int fd = open("/dev/video0", O_RDWR, 0);
+            if (fd >= 0) {
+                current_device = DEVICE_TYPE_V4L2;
+                close(fd);
+            }
         }
     } else if (stat("/dev/mpp_service", &st) == 0) {
         int fd = open("/dev/mpp_service", O_RDWR, 0);
