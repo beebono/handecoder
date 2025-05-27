@@ -5,7 +5,6 @@
 #define DMA_HEAP_PATH "/dev/dma_heap/vidbuf_cached"
 
 extern int current_device, padded_width, padded_height;
-extern bool is_a133;
 
 int convert2drm(const AVFrame *src, AVFrame *dst);
 static int (*real_avcodec_open2)(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
@@ -32,16 +31,6 @@ int open(const char *path, int flags, __u32 mode) {
 enum AVPixelFormat get_drm_format(AVCodecContext *avctx, const enum AVPixelFormat *pix_fmts) {
     while (*pix_fmts != -1) {
         if (*pix_fmts == AV_PIX_FMT_DRM_PRIME) {
-            return *pix_fmts;
-        }
-        pix_fmts++;
-    }
-    return AV_PIX_FMT_NONE;
-}
-
-enum AVPixelFormat get_vul_format(AVCodecContext *avctx, const enum AVPixelFormat *pix_fmts) {
-    while (*pix_fmts != -1) {
-        if (*pix_fmts == AV_PIX_FMT_VULKAN) {
             return *pix_fmts;
         }
         pix_fmts++;
@@ -78,10 +67,6 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
         } else if (current_device == DEVICE_TYPE_ALLWINNER || current_device == DEVICE_TYPE_SWCOMPAT) {
             codec = avcodec_find_decoder_by_name("h264");
             avctx = avcodec_alloc_context3(codec);
-            if (is_a133) {
-                av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_VULKAN, NULL, NULL, 0);
-                avctx->get_format = get_vul_format;
-            }
         }
         avctx->width = padded_width;
         avctx->height = padded_height;
@@ -100,13 +85,6 @@ int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame) {
             return ret;
         }
 
-        if (frame->format == AV_PIX_FMT_VULKAN) {
-            AVFrame *tmpframe = av_frame_alloc();
-            tmpframe->format = AV_PIX_FMT_DRM_PRIME;
-            av_hwframe_map(tmpframe, frame, AV_HWFRAME_MAP_READ | AV_HWFRAME_MAP_DIRECT);
-            av_frame_move_ref(frame, tmpframe);
-            av_frame_free(&tmpframe);
-        }
         // Do this garbage to fix an off-by-one in Steam Link caused by changing ffmpeg libararies...
         if (frame->format == AV_PIX_FMT_DRM_PRIME) {
             frame->format = AV_PIX_FMT_OPENCL;

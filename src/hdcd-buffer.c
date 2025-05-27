@@ -47,7 +47,6 @@ void buffer_pool_init(struct dma_pool *pool, size_t size) {
             pool->buffers[i].size = size;
             pool->buffers[i].mapping = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_data.fd, 0);
             pool->buffers[i].in_use = false;
-            fprintf(stderr, "DEBUG: buffer: %d fd: %d size: %ld mapping: %p\n", i, fd_data.fd, size, pool->buffers[i].mapping);
         }
     } else if (current_device == DEVICE_TYPE_SWCOMPAT) {
         int drm_fd = open("/dev/dri/card0", O_RDWR, 0);
@@ -89,8 +88,8 @@ void convert2drm(const AVFrame *src, AVFrame *dst) {
     int width = src->width;
     int height = src->height;
 
-    size_t sizeY = width * height;
-    size_t sizeUV = width * (height / 2);
+    size_t sizeY = src->linesize[0] * height;
+    size_t sizeUV = src->linesize[0] * (height / 2);
     size_t offsetUV = ALIGN_UP(sizeY, 4096);
     size_t total_size = ALIGN_UP(offsetUV + sizeUV, 4096);
 
@@ -111,16 +110,21 @@ void convert2drm(const AVFrame *src, AVFrame *dst) {
     desc->layers[0].nb_planes = 2;
     desc->layers[0].planes[0].object_index = 0;
     desc->layers[0].planes[0].offset = 0;
-    desc->layers[0].planes[0].pitch = width;
+    desc->layers[0].planes[0].pitch = src->linesize[0];
     desc->layers[0].planes[1].object_index = 0;
     desc->layers[0].planes[1].offset = offsetUV;
-    desc->layers[0].planes[1].pitch = width;
+    desc->layers[0].planes[1].pitch = src->linesize[0];
 
-    memcpy(buffer->mapping, src->data[0], sizeY);
+    for (int y = 0; y < height; y++) {
+        memcpy(buffer->mapping + y * src->linesize[0], src->data[0] + y * src->linesize[0], width);
+    }
     uint8_t *dst_uv = buffer->mapping + offsetUV;
-    for (int i = 0; i < sizeUV / 2; i++) {
-        dst_uv[i * 2 + 0] = src->data[1][i];
-        dst_uv[i * 2 + 1] = src->data[2][i];
+    for (int y = 0; y < height / 2; y++) {
+        for (int x = 0; x < width / 2; x++) {
+            int index = y * (src->linesize[1]) + x;
+            dst_uv[y * src->linesize[0] + x * 2 + 0] = src->data[1][index];
+            dst_uv[y * src->linesize[0] + x * 2 + 1] = src->data[2][index];
+        }
     }
 
     dst->format = AV_PIX_FMT_OPENCL; // Off-by-one...
