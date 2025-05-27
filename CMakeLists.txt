@@ -21,8 +21,8 @@ ExternalProject_Add(
     CONFIGURE_COMMAND env PKG_CONFIG_PATH=${RKMPP_INSTALL_DIR}/lib/pkgconfig#:/usr/lib/aarch64-linux-gnu/pkgconfig
     ${CMAKE_CURRENT_BINARY_DIR}/ffmpeg-prefix/src/ffmpeg/configure --arch=aarch64 --target-os=linux --pkg-config=/usr/bin/pkg-config --prefix=${CMAKE_CURRENT_BINARY_DIR}/ffmpeg-install
     --enable-shared --disable-static --disable-doc --disable-programs --disable-avformat --disable-avdevice --disable-swscale --disable-swresample --disable-postproc
-    --disable-avfilter --disable-network --disable-everything --enable-libudev --enable-libdrm --enable-vulkan --enable-v4l2-m2m --enable-v4l2-request --enable-rkmpp
-    --enable-version3 --enable-decoder=h264,h264_v4l2m2m,h264_rkmpp --enable-hwaccel=h264_v4l2request,h264_vulkan 
+    --disable-avfilter --disable-network --disable-everything --enable-libudev --enable-libdrm --enable-v4l2-m2m --enable-v4l2-request --enable-rkmpp
+    --enable-version3 --enable-decoder=h264,h264_v4l2m2m,h264_rkmpp --enable-hwaccel=h264_v4l2request
     #--enable-cross-compile --cross-prefix=aarch64-linux-gnu-
     BUILD_COMMAND make
     DEPENDS rkmpp
