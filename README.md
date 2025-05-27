@@ -43,7 +43,7 @@ cmake --build . --target install
 ```
 
 To Cross-Compile, add your CMake Toolchain file to the first cmake command. (-DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file])
-    Also make sure to uncomment the the last line of CONFIGURE_COMMAND in CMakeLists.txt!
+    Also make sure to uncomment the the two commented parts in CONFIGURE_COMMAND in CMakeLists.txt!
 
 The resulting libraries will be in the specified build directory under `./build/lib`.
 
