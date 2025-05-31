@@ -16,9 +16,12 @@ This library wraps a precompiled program with an FFmpeg implementation that prov
 Currently intended for use with:
 - Linux-based systems with V4L2 M2M support.
 - Rockchip SoCs with the MPP video engine.
-- Allwinner SoCs with the cedar video engine and a Mali GPU.
+- Allwinner SoCs with the cedar video engine.
 
 ## Build dependencies
+
+This project is expected to be cross-compiled on an x86_64 Debian/Ubuntu multi-arch system.
+Modifications will be needed if deviating from that setup.
 
 Ubuntu/Debian:
 ```bash
@@ -38,12 +41,9 @@ cd handecoder
 
 ```bash
 mkdir ./build && cd build
-cmake ../ -DCMAKE_BUILD_TYPE=Release
+cmake ../ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file]
 cmake --build . --target install
 ```
-
-To Cross-Compile, add your CMake Toolchain file to the first cmake command. (-DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file])
-    Also make sure to uncomment the the two commented parts in CONFIGURE_COMMAND in CMakeLists.txt!
 
 The resulting libraries will be in the specified build directory under `./build/lib`.
 

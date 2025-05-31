@@ -1,12 +1,13 @@
 #define _GNU_SOURCE
 
 #include "hdcd-common.h"
-#include "allwinner/ion.h"
+#include <libavutil/imgutils.h>
 #include <libavutil/hwcontext_drm.h>
+#include <drm/drm.h>
+#include <drm/drm_mode.h>
 #include <drm/drm_fourcc.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <gbm.h>
 
 #define ALIGN_UP(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
 #define MAX_POOL_SIZE 8
@@ -28,40 +29,33 @@ int open(const char *path, int flags, __u32 mode);
 
 void buffer_pool_init(struct dma_pool *pool, size_t size) {
     pool->buffers = calloc(MAX_POOL_SIZE, sizeof(struct dmabuffer));
-
-    if (current_device == DEVICE_TYPE_ALLWINNER) {
-        int ion_fd = open("/dev/ion", O_RDWR, 0);
-        struct ion_allocation_data allocation_data = {
-		    .len = size,
-		    .align = 4096,
-		    .heap_id_mask = ION_HEAP_TYPE_DMA_MASK,
-		    .flags = ION_FLAG_CACHED
-	    };
-        for (int i = 0; i < MAX_POOL_SIZE; i++) {
-            ioctl(ion_fd, ION_IOC_ALLOC, &allocation_data);
-            struct ion_fd_data fd_data = {
-		        .handle = allocation_data.handle
-	        };
-            ioctl(ion_fd, ION_IOC_MAP, &fd_data);
-            pool->buffers[i].fd = fd_data.fd;
-            pool->buffers[i].size = size;
-            pool->buffers[i].mapping = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_data.fd, 0);
-            pool->buffers[i].in_use = false;
+    int drm_fd = open("/dev/dri/card0", O_RDWR, 0);
+    for (int i = 0; i < MAX_POOL_SIZE; i++) {
+        struct drm_mode_create_dumb create = {
+            .width = padded_width,
+            .height = padded_height,
+            .bpp = 32,
+        };
+        if (ioctl(drm_fd, DRM_IOCTL_MODE_CREATE_DUMB, &create)) {
+            perror("DRM_IOCTL_MODE_CREATE_DUMB");
         }
-    } else if (current_device == DEVICE_TYPE_SWCOMPAT) {
-        int drm_fd = open("/dev/dri/card0", O_RDWR, 0);
-        struct gbm_device *gbm_dev = gbm_create_device(drm_fd);
-
-        for (int i = 0; i < MAX_POOL_SIZE; i++) {
-            struct gbm_bo *bo = gbm_bo_create(gbm_dev, padded_width, padded_height,
-                                GBM_FORMAT_XRGB8888, GBM_BO_USE_RENDERING | GBM_BO_USE_LINEAR);
-
-            int fd = gbm_bo_get_fd(bo);
-            pool->buffers[i].fd = fd;
-            pool->buffers[i].size = size;
-            pool->buffers[i].mapping = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-            pool->buffers[i].in_use = false;
+        struct drm_prime_handle prime = {
+            .handle = create.handle,
+            .flags = DRM_RDWR,
+        };
+        if (ioctl(drm_fd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &prime)) {
+            perror("DRM_IOCTL_PRIME_HANDLE_TO_FD");
         }
+        struct drm_mode_map_dumb map = {
+            .handle = create.handle,
+        };
+        if (ioctl(drm_fd, DRM_IOCTL_MODE_MAP_DUMB, &map)) {
+            perror("DRM_IOCTL_MODE_MAP_DUMB");
+        }
+        pool->buffers[i].fd = prime.fd;
+        pool->buffers[i].size = create.size;
+        pool->buffers[i].mapping = mmap(NULL, create.size, PROT_READ | PROT_WRITE, MAP_SHARED, drm_fd, map.offset);
+        pool->buffers[i].in_use = false;
     }
 }
 
@@ -82,7 +76,7 @@ void buffer_used(void *opaque, uint8_t *data) {
     buffer->in_use = false;
 }
 
-void convert2drm(const AVFrame *src, AVFrame *dst) {
+void yuv2drm(const AVFrame *src, AVFrame *dst) {
     AVDRMFrameDescriptor *desc = calloc(1, sizeof(*desc));
 
     int width = src->width;
@@ -127,9 +121,9 @@ void convert2drm(const AVFrame *src, AVFrame *dst) {
         }
     }
 
-    dst->format = AV_PIX_FMT_OPENCL; // Off-by-one...
-    dst->width = src->width;
-    dst->height = src->height;
+    dst->width = width;
+    dst->height = height;
+    dst->format = AV_PIX_FMT_OPENCL; // Required off-by-one...
     dst->crop_top = src->crop_top;
     dst->crop_bottom = src->crop_bottom;
     dst->crop_left = src->crop_left;

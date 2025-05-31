@@ -6,7 +6,7 @@
 
 extern int current_device, padded_width, padded_height;
 
-int convert2drm(const AVFrame *src, AVFrame *dst);
+void yuv2drm(const AVFrame *src, AVFrame *dst);
 static int (*real_avcodec_open2)(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
 static int (*real_avcodec_receive_frame)(AVCodecContext *avctx, const AVFrame *frame);
 static AVBufferRef* (*real_av_buffer_ref)(const AVBufferRef *buf);
@@ -51,11 +51,7 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
 
     if (codec && is_h264_sw_decoder(codec) && current_device != DEVICE_TYPE_NONE) {
         avcodec_free_context(&avctx);
-        if (current_device == DEVICE_TYPE_V4L2REQ) {
-            codec = avcodec_find_decoder_by_name("h264");
-            avctx = avcodec_alloc_context3(codec);
-            av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_V4L2REQUEST, NULL, NULL, 0);
-        } else if (current_device == DEVICE_TYPE_V4L2) {
+        if (current_device == DEVICE_TYPE_V4L2) {
             codec = avcodec_find_decoder_by_name("h264_v4l2m2m");
             avctx = avcodec_alloc_context3(codec);
             av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_DRM, "/dev/dri/card0", NULL, 0);
@@ -64,9 +60,15 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
         } else if (current_device == DEVICE_TYPE_ROCKCHIP) {
             codec = avcodec_find_decoder_by_name("h264_rkmpp");
             avctx = avcodec_alloc_context3(codec);
-        } else if (current_device == DEVICE_TYPE_ALLWINNER || current_device == DEVICE_TYPE_SWCOMPAT) {
+        } else if (current_device == DEVICE_TYPE_ALLWINNER) {
+            codec = avcodec_find_decoder_by_name("h264_cedar");
+            avctx = avcodec_alloc_context3(codec);
+        } else {
             codec = avcodec_find_decoder_by_name("h264");
             avctx = avcodec_alloc_context3(codec);
+            if (current_device == DEVICE_TYPE_V4L2REQ) {
+                av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_V4L2REQUEST, NULL, NULL, 0);
+            }
         }
         avctx->width = padded_width;
         avctx->height = padded_height;
@@ -92,7 +94,7 @@ int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame) {
         if (frame->format == AV_PIX_FMT_YUV420P) {
             AVFrame *tmpframe = av_frame_alloc();
             av_frame_move_ref(tmpframe, frame);
-            convert2drm(tmpframe, frame);
+            yuv2drm(tmpframe, frame);
             av_frame_free(&tmpframe);
         }
         return 0;

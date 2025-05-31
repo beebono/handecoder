@@ -1,0 +1,11 @@
+[submodule "external/mpp"]
+	path = external/mpp
+	url = https://github.com/rockchip-linux/mpp.git
+[submodule "external/ffmpeg-type-c"]
+	path = external/ffmpeg-type-c
+	url = https://github.com/beebono/ffmpeg-type-c.git
+	branch = custom
+[submodule "external/libcedrus-type-c"]
+	path = external/libcedrus-type-c
+	url = https://github.com/beebono/libcedrus-type-c.git
+	branch = custom
