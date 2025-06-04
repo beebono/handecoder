@@ -25,4 +25,4 @@ enum device_type {
     DEVICE_TYPE_SWCOMPAT,
 };
 
-#endif // HDCD_COMMON_H
+#endif

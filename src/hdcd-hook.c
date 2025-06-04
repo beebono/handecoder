@@ -1,16 +1,17 @@
-#define _GNU_SOURCE
-
 #include "hdcd-common.h"
 
+// First hardcoded entry in Steam Link, will always be opened on stream init
 #define DMA_HEAP_PATH "/dev/dma_heap/vidbuf_cached"
 
+// Externs are potentially unsafe
 extern int current_device, padded_width, padded_height;
 
-void yuv2drm(const AVFrame *src, AVFrame *dst);
+void yuv2drm(AVCodecContext *avctx, const AVFrame *src, AVFrame *dst);
 static int (*real_avcodec_open2)(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
 static int (*real_avcodec_receive_frame)(AVCodecContext *avctx, const AVFrame *frame);
 static AVBufferRef* (*real_av_buffer_ref)(const AVBufferRef *buf);
 
+// Do this chain of open hooks to ensure compatibility
 int real_open(const char *path, int flags, __u32 mode) {
     return syscall(SYS_openat, AT_FDCWD, path, flags, mode);
 }
@@ -18,6 +19,7 @@ int real_open(const char *path, int flags, __u32 mode) {
 int open64(const char *path, int flags, __u32 mode) {
     if (path && strcmp(path, DMA_HEAP_PATH) == 0) {
         if (current_device != DEVICE_TYPE_NONE) {
+            // HACK: Open /dev/null because Steam Link will refuse like a brat on failure
             return real_open("/dev/null", O_RDWR, 0);
         }
     }
@@ -28,7 +30,7 @@ int open(const char *path, int flags, __u32 mode) {
     return open64(path, flags, mode);
 }
 
-enum AVPixelFormat get_drm_format(AVCodecContext *avctx, const enum AVPixelFormat *pix_fmts) {
+static enum AVPixelFormat get_drm_format(AVCodecContext *avctx, const enum AVPixelFormat *pix_fmts) {
     while (*pix_fmts != -1) {
         if (*pix_fmts == AV_PIX_FMT_DRM_PRIME) {
             return *pix_fmts;
@@ -50,7 +52,7 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
     }
 
     if (codec && is_h264_sw_decoder(codec) && current_device != DEVICE_TYPE_NONE) {
-        avcodec_free_context(&avctx);
+        avcodec_free_context(&avctx); // Annihilate any previous references like get_format and get_buffer2, for safety.
         if (current_device == DEVICE_TYPE_V4L2) {
             codec = avcodec_find_decoder_by_name("h264_v4l2m2m");
             avctx = avcodec_alloc_context3(codec);
@@ -70,6 +72,7 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
                 av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_V4L2REQUEST, NULL, NULL, 0);
             }
         }
+        // ALWAYS set these values if we're replacing the codec, some can't handle having no valid resolution at init.
         avctx->width = padded_width;
         avctx->height = padded_height;
     }
@@ -87,14 +90,14 @@ int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame) {
             return ret;
         }
 
-        // Do this garbage to fix an off-by-one in Steam Link caused by changing ffmpeg libararies...
+        // HACK: Do this garbage to fix an off-by-one in Steam Link caused by changing to updated ffmpeg libraries...
         if (frame->format == AV_PIX_FMT_DRM_PRIME) {
             frame->format = AV_PIX_FMT_OPENCL;
         }
-        if (frame->format == AV_PIX_FMT_YUV420P) {
+        if (frame->format == AV_PIX_FMT_YUV420P || frame->format == AV_PIX_FMT_NV12) {
             AVFrame *tmpframe = av_frame_alloc();
             av_frame_move_ref(tmpframe, frame);
-            yuv2drm(tmpframe, frame);
+            yuv2drm(avctx, tmpframe, frame);
             av_frame_free(&tmpframe);
         }
         return 0;
@@ -107,7 +110,9 @@ AVBufferRef *av_buffer_ref(const AVBufferRef *buf) {
         real_av_buffer_ref = dlsym(RTLD_NEXT, "av_buffer_ref");
     }
 
-    // And this because Steam Link just needs it??????
+    // HACK: And this because Steam Link tries to ref a buffer that WILL NEVER EXIST?????
+    //       I'm not even sure how it's NORMALLY supposed to work without this honestly.
+    //       So this really sucks to do, but we can't change Steam Link's code...
     if (!buf){
         return 0;
     }

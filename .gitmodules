@@ -5,7 +5,6 @@
 	path = external/ffmpeg-type-c
 	url = https://github.com/beebono/ffmpeg-type-c.git
 	branch = custom
-[submodule "external/libcedrus-type-c"]
-	path = external/libcedrus-type-c
-	url = https://github.com/beebono/libcedrus-type-c.git
-	branch = custom
+[submodule "external/libtwig"]
+	path = external/libtwig
+	url = https://github.com/beebono/libtwig.git
