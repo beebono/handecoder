@@ -1,0 +1,10 @@
+prefix=@MPP_BUILD_PREFIX@
+exec_prefix=${prefix}
+libdir=@MPP_BUILD_LIBDIR@
+includedir=@MPP_BUILD_INCLUDEDIR@
+
+Name: rockchip_mpp
+Description: Rockchip Media Process Platform
+Version: @MPP_VERSION@
+Libs: -L${libdir} -lrockchip_mpp
+Cflags: -I${includedir}

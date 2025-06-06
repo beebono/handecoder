@@ -41,11 +41,11 @@ cd handecoder
 
 ```bash
 mkdir ./build && cd build
-cmake ../ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file]
+cmake ../ -DCMAKE_TOOLCHAIN_FILE=[/path/to/your/toolchain.file] -DCMAKE_INSTALL_PREFIX=[/path/to/your/prefix]
 cmake --build . --target install
 ```
 
-The resulting libraries will be in the specified build directory under `./build/lib`.
+The resulting libraries will be in your specified prefix directory under "path/to/your/prefix/lib".
 
 ## Usage
 

@@ -1,0 +1,11 @@
+prefix=@TWIG_BUILD_PREFIX@
+exec_prefix=${prefix}
+libdir=@TWIG_BUILD_LIBDIR@
+includedir=@TWIG_BUILD_INCLUDEDIR@
+
+Name: libtwig
+Description: A streamlined CedarX variant library for H.264 decoding
+Version: @TWIG_VERSION@
+Libs: -L${libdir} -ltwig
+Libs.private: -lpthread
+Cflags: -I${includedir}
