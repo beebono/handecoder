@@ -8,7 +8,27 @@ endif()
 
 add_subdirectory(external/libtwig EXCLUDE_FROM_ALL)
 
-add_subdirectory(external/mpp EXCLUDE_FROM_ALL)
+if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    set(OLD_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
+    set(OLD_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+    set(OLD_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+    set(OLD_C_FLAGS_RELWITHDEBINFO ${CMAKE_C_FLAGS_RELWITHDEBINFO})
+    
+    string(REPLACE "-O3" "-O1" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+    string(REPLACE "-O3" "-O1" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    string(REPLACE "-O2" "-O1" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+    string(REPLACE "-O2" "-O1" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+    
+    add_subdirectory(external/mpp EXCLUDE_FROM_ALL)
+    
+    set(CMAKE_C_FLAGS_RELEASE ${OLD_C_FLAGS_RELEASE})
+    set(CMAKE_CXX_FLAGS_RELEASE ${OLD_CXX_FLAGS_RELEASE})
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO ${OLD_C_FLAGS_RELWITHDEBINFO})
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO ${OLD_C_FLAGS_RELWITHDEBINFO})
+else()
+    add_subdirectory(external/mpp EXCLUDE_FROM_ALL)
+endif()
+
 set(BUILD_TEST OFF)
 
 set(TWIG_BUILD_PREFIX "${CMAKE_BINARY_DIR}/external/libtwig")
@@ -44,6 +64,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(FFMPEG_DEBUG_FLAGS "--enable-debug=3")
 elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     set(FFMPEG_DEBUG_FLAGS "--enable-debug=1")
+elseif(CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    set(FFMPEG_DEBUG_FLAGS "--disable-debug --enable-small")
 else()
     set(FFMPEG_DEBUG_FLAGS "--disable-debug")
 endif()
@@ -140,7 +162,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"
     install(CODE "
         file(GLOB SO_FILES \"\${CMAKE_INSTALL_PREFIX}/lib/*.so*\")
         foreach(so_file \${SO_FILES})
-            execute_process(COMMAND strip --strip-unneeded \${so_file})
+            execute_process(COMMAND aarch64-linux-gnu-strip --strip-unneeded \${so_file})
         endforeach()
     ")
 endif()
