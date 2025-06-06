@@ -3,7 +3,7 @@ project(handecoder)
 
 include(ExternalProject)
 
-# TODO: mpp uses CMake, try to integrate properly!
+# TODO: mpp uses CMake, try not to use ExternalProject for it!
 set(RKMPP_INSTALL_DIR "${CMAKE_BINARY_DIR}/rkmpp-install")
 ExternalProject_Add(
     rkmpp
@@ -12,7 +12,14 @@ ExternalProject_Add(
     INSTALL_COMMAND ${CMAKE_COMMAND} --install . --prefix ${RKMPP_INSTALL_DIR}
 )
 
-# TODO: Integrate libtwig build here
+# TODO: libtwig also uses CMake, try not to use ExternalProject for it either!
+set(TWIG_INSTALL_DIR "${CMAKE_BINARY_DIR}/twig-install")
+ExternalProject_Add(
+    twig
+    SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/libtwig"
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${TWIG_INSTALL_DIR} -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+    INSTALL_COMMAND ${CMAKE_COMMAND} --install . --prefix ${TWIG_INSTALL_DIR}
+)
 
 set(FFMPEG_INSTALL_DIR "${CMAKE_BINARY_DIR}/ffmpeg-install")
 ExternalProject_Add(
@@ -22,8 +29,8 @@ ExternalProject_Add(
     ${CMAKE_SOURCE_DIR}/external/ffmpeg-type-c/configure --arch=aarch64 --target-os=linux --pkg-config=/usr/bin/pkg-config --prefix=${FFMPEG_INSTALL_DIR}
     --enable-shared --disable-static --disable-doc --disable-programs --disable-avformat --disable-avdevice --enable-swscale --disable-swresample --disable-postproc
     --disable-avfilter --disable-network --disable-everything --enable-libudev --enable-libdrm --enable-v4l2-m2m --enable-v4l2-request --enable-rkmpp --enable-version3
-    --enable-decoder=h264,h264_v4l2m2m,h264_rkmpp --enable-hwaccel=h264_v4l2request --extra-cflags=-I${TWIG_INSTALL_DIR}/include
-    --extra-ldflags=-L${TWIG_INSTALL_DIR}/lib --extra-libs=-ltwig --enable-cross-compile --cross-prefix=aarch64-linux-gnu-
+    --enable-cedar --enable-decoder=h264,h264_v4l2m2m,h264_rkmpp,h264_cedar --enable-hwaccel=h264_v4l2request --extra-cflags=-I${TWIG_INSTALL_DIR}/include
+    --extra-ldflags=-L${TWIG_INSTALL_DIR}/lib --enable-cross-compile --cross-prefix=aarch64-linux-gnu-
     BUILD_COMMAND make
     DEPENDS rkmpp twig
 )
@@ -48,7 +55,7 @@ target_include_directories(handecoder PRIVATE
     ${FFMPEG_INSTALL_DIR}/include
     ${TWIG_INSTALL_DIR}/include
 )
-target_link_libraries(handecoder PRIVATE ffmpeglibs twig)
+target_link_libraries(handecoder PRIVATE ffmpeglibs)
 
 # TODO: Find a better way to aggregate the libraries
 install(TARGETS handecoder LIBRARY DESTINATION ${CMAKE_BINARY_DIR}/lib)
@@ -56,4 +63,4 @@ install(FILES ${FFMPEG_INSTALL_DIR}/lib/libavcodec.so.59.19.101 DESTINATION ${CM
 install(FILES ${FFMPEG_INSTALL_DIR}/lib/libavutil.so.57.39.100 DESTINATION ${CMAKE_BINARY_DIR}/lib RENAME libavutil.so.57)
 install(FILES ${FFMPEG_INSTALL_DIR}/lib/libswscale.so.8.3.100 DESTINATION ${CMAKE_BINARY_DIR}/lib RENAME libswscale.so.8)
 install(FILES ${RKMPP_INSTALL_DIR}/lib/librockchip_mpp.so.0 DESTINATION ${CMAKE_BINARY_DIR}/lib RENAME librockchip_mpp.so.1)
-install(FILES ${TWIG_INSTALL_DIR}/lib/libtwig.so.1 DESTINATION ${CMAKE_BINARY_DIR}/lib)
+install(FILES ${TWIG_INSTALL_DIR}/lib/libtwig.so.1.0.0 DESTINATION ${CMAKE_BINARY_DIR}/lib RENAME libtwig.so.1)

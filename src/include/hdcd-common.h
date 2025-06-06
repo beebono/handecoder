@@ -1,6 +1,8 @@
 #ifndef HDCD_COMMON_H
 #define HDCD_COMMON_H
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
