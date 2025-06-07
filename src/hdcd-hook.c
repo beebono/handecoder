@@ -65,6 +65,7 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
         } else if (current_device == DEVICE_TYPE_ALLWINNER) {
             codec = avcodec_find_decoder_by_name("h264_cedar");
             avctx = avcodec_alloc_context3(codec);
+            avctx->get_format = get_drm_format;
             avctx->pix_fmt = AV_PIX_FMT_DRM_PRIME;
         } else {
             codec = avcodec_find_decoder_by_name("h264");
