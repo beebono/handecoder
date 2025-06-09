@@ -83,8 +83,8 @@ ExternalProject_Add(
         --disable-avformat --disable-avdevice --enable-swscale --disable-swresample 
         --disable-postproc --disable-avfilter --disable-network --disable-everything 
         --enable-libudev --enable-libdrm --enable-v4l2-m2m --enable-v4l2-request 
-        --enable-rkmpp --enable-version3 --enable-cedar
-        --enable-decoder=h264,h264_v4l2m2m,h264_rkmpp,h264_cedar 
+        --enable-rkmpp --enable-version3
+        --enable-decoder=h264,h264_v4l2m2m,h264_rkmpp
         --enable-hwaccel=h264_v4l2request
     BUILD_COMMAND make -j$(nproc)
     DEPENDS twig rockchip_mpp
