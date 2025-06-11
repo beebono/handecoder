@@ -1,19 +1,14 @@
-#ifndef HDCD_COMMON_H
-#define HDCD_COMMON_H
+#ifndef HDCD_H_
+#define HDCD_H_
 
 #define _GNU_SOURCE
 
-
+#include <libavcodec/avcodec.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
-#include <dlfcn.h>
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/syscall.h>
-#include <libavcodec/avcodec.h>
+#include <unistd.h>
 
 #define O_RDWR      00000002
 #define O_CLOEXEC   02000000
@@ -46,4 +41,4 @@ extern hdcd_dev_t device;
 
 int open(const char *path, int flags, uint32_t mode);
 
-#endif
+#endif // HDCD_H_

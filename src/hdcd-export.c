@@ -1,9 +1,8 @@
 #include "hdcd.h"
-
+#include <drm/drm_fourcc.h>
 #include <libavutil/hwcontext_drm.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
-#include <drm/drm_fourcc.h>
 #include <twig.h>
 
 #define ALIGN(x, a) (((x) + ((a) - 1)) & ~((a) - 1))

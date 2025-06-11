@@ -1,8 +1,7 @@
 #include "hdcd.h"
-
-#include <libavutil/hwcontext_drm.h>
 #include <drm/drm.h>
 #include <drm/drm_mode.h>
+#include <libavutil/hwcontext_drm.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
