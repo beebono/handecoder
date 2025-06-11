@@ -91,9 +91,10 @@ ExternalProject_Add(
 )
 
 set(HDCD_SOURCES
-    src/hdcd-init.c
-    src/hdcd-hook.c
+    src/hdcd.c
     src/hdcd-buffer.c
+    src/hdcd-export.c
+    src/hdcd-hook.c
 )
 
 add_library(avcodec SHARED IMPORTED)
@@ -117,6 +118,7 @@ add_dependencies(handecoder ffmpeg)
 target_include_directories(handecoder PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${FFMPEG_INSTALL_DIR}/include
+    ${TWIG_BUILD_INCLUDEDIR}
 )
 
 target_link_libraries(handecoder PRIVATE 

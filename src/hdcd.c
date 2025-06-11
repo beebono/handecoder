@@ -96,3 +96,9 @@ finish:
         device->height = height;
     }
 }
+
+void hdcd_export_cleanup(void);
+
+static void __attribute__((destructor)) cleanup_wrapper(void) {
+    hdcd_export_cleanup();
+}

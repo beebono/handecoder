@@ -58,5 +58,14 @@ void buffer_used(void *opaque, uint8_t *data) {
     buffer->in_use = false;
 }
 
-// TODO: Add a PROPER buffer/pool cleanup function!!!
-//       Call at codec close or maybe just as a destructor?
+void buffer_pool_cleanup(display_buf_t *pool) {
+    for (int i = 0; i < MAX_POOL_SIZE; i++) {
+        if (pool[i].mapping && pool[i].mapping != MAP_FAILED) {
+            munmap(pool[i].mapping, pool[i].size);
+        }
+        if (pool[i].fd >= 0) {
+            close(pool[i].fd);
+        }
+        pool[i].in_use = false;
+    }
+}

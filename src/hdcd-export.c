@@ -8,12 +8,15 @@
 
 #define ALIGN(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
 
+static struct SwsContext *sws_ctx = NULL;
+static display_buf_t *pool = NULL;
+static bool pool_initialized = false;
+
 static AVDRMFrameDescriptor *export_rgb(const AVFrame *frame, display_buf_t *buffer) {
     int width = frame->width;
     int height = frame->height;
     AVDRMFrameDescriptor *desc = calloc(1, sizeof(AVDRMFrameDescriptor));
 
-    static struct SwsContext *sws_ctx = NULL;
     if (!sws_ctx) {
         sws_ctx = sws_getContext(
             width, height, AV_PIX_FMT_NV12,
@@ -88,8 +91,7 @@ void yuv2drm(const AVFrame *src, AVFrame *dst) {
         // TODO: Add libtwig support via twig.h
     }
 
-    static display_buf_t *pool = calloc(MAX_POOL_SIZE, sizeof(display_buf_t));
-    static bool pool_initialized = false;
+
     if (!pool_initialized) {
         size_t total_size;
         if (needs_rgb)
@@ -97,6 +99,7 @@ void yuv2drm(const AVFrame *src, AVFrame *dst) {
         else
             total_size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 32);
 
+        pool = calloc(MAX_POOL_SIZE, sizeof(display_buf_t));
         buffer_pool_init(pool, total_size);
         pool_initialized = true;
     }
@@ -117,4 +120,20 @@ void yuv2drm(const AVFrame *src, AVFrame *dst) {
     dst->crop_right = src->crop_right;
     dst->data[0] = (uint8_t*)desc;
     dst->buf[0] = av_buffer_create((uint8_t*)desc, sizeof(*desc), buffer_used, buffer, 0);
+}
+
+void buffer_pool_cleanup(display_buf_t *pool);
+
+void hdcd_export_cleanup(void) {
+    if (sws_ctx) {
+        sws_freeContext(sws_ctx);
+        sws_ctx = NULL;
+    }
+    
+    if (pool) {
+        buffer_pool_cleanup(pool);
+        free(pool);
+        pool = NULL;
+    }
+    pool_initialized = false;
 }
