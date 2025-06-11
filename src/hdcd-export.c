@@ -1,3 +1,5 @@
+#include "hdcd.h"
+
 #include <libavutil/hwcontext_drm.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
@@ -6,7 +8,7 @@
 
 #define ALIGN(x, a) (((x) + ((a) - 1)) & ~((a) - 1))
 
-AVDRMFrameDescriptor *export_rgb(const AVFrame *frame, struct dmabuffer *buffer) {
+static AVDRMFrameDescriptor *export_rgb(const AVFrame *frame, display_buf_t *buffer) {
     int width = frame->width;
     int height = frame->height;
     AVDRMFrameDescriptor *desc = calloc(1, sizeof(AVDRMFrameDescriptor));
@@ -39,7 +41,7 @@ AVDRMFrameDescriptor *export_rgb(const AVFrame *frame, struct dmabuffer *buffer)
     return desc;
 }
 
-AVDRMFrameDescriptor *export_yuv(const AVFrame *frame, struct dmabuffer *buffer) {
+static AVDRMFrameDescriptor *export_yuv(const AVFrame *frame, display_buf_t *buffer) {
     int width = frame->width;
     int height = frame->height;
     AVDRMFrameDescriptor *desc = calloc(1, sizeof(AVDRMFrameDescriptor));
@@ -83,29 +85,28 @@ void yuv2drm(const AVFrame *src, AVFrame *dst) {
     int height = src->height;
 
     if (current_device == DEVICE_TYPE_ALLWINNER) {
-        // Extract
+        // TODO: Add libtwig support via twig.h
     }
 
-    static struct dma_pool pool; // Again, maybe just use a static array...?
+    static display_buf_t *pool = calloc(MAX_POOL_SIZE, sizeof(display_buf_t));
     static bool pool_initialized = false;
     if (!pool_initialized) {
         size_t total_size;
-        if (needs_rgb) {
+        if (needs_rgb)
             total_size = av_image_get_buffer_size(AV_PIX_FMT_0RGB32, width, height, 32);
-        } else {
+        else
             total_size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 32);
-        }
-        buffer_pool_init(&pool, total_size);
+
+        buffer_pool_init(pool, total_size);
         pool_initialized = true;
     }
-    struct dmabuffer *buffer = buffer_pool_acquire(&pool);
+    display_buf_t *buffer = buffer_pool_acquire(&pool);
 
     AVDRMFrameDescriptor *desc;
-    if (needs_rgb) {
+    if (needs_rgb)
         desc = export_rgb(src, buffer);
-    } else {
+    else
         desc = export_yuv(src, buffer);
-    }
 
     dst->width = width;
     dst->height = height;

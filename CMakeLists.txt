@@ -115,7 +115,7 @@ add_library(handecoder SHARED ${HDCD_SOURCES})
 add_dependencies(handecoder ffmpeg)
 
 target_include_directories(handecoder PRIVATE
-    ${CMAKE_SOURCE_DIR}/src/include
+    ${CMAKE_SOURCE_DIR}/include
     ${FFMPEG_INSTALL_DIR}/include
 )
 

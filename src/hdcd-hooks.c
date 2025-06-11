@@ -1,10 +1,9 @@
-#include "hdcd-common.h"
+#include "hdcd.h"
 
 // First hardcoded entry in Steam Link, will always be opened on stream init
 #define DMA_HEAP_PATH "/dev/dma_heap/vidbuf_cached"
 
-// Externs are potentially unsafe
-extern int current_device, padded_width, padded_height;
+hdcd_device_t device;
 
 void yuv2drm(AVCodecContext *avctx, const AVFrame *src, AVFrame *dst);
 static int (*real_avcodec_open2)(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
@@ -12,21 +11,21 @@ static int (*real_avcodec_receive_frame)(AVCodecContext *avctx, const AVFrame *f
 static AVBufferRef* (*real_av_buffer_ref)(const AVBufferRef *buf);
 
 // Do this chain of open hooks to ensure compatibility
-int real_open(const char *path, int flags, __u32 mode) {
+int real_open(const char *path, int flags, uint32_t mode) {
     return syscall(SYS_openat, AT_FDCWD, path, flags, mode);
 }
 
-int open64(const char *path, int flags, __u32 mode) {
+int open64(const char *path, int flags, uint32_t mode) {
     if (path && strcmp(path, DMA_HEAP_PATH) == 0) {
-        if (current_device != DEVICE_TYPE_NONE) {
-            // HACK: Open /dev/null because Steam Link will refuse like a brat on failure
-            return real_open("/dev/null", O_RDWR, 0);
+        if (device->type != NONE) {
+            // HACK: Force success because Steam Link will refuse like a brat on failure
+            return 0;
         }
     }
     return real_open(path, flags, mode);
 }
 
-int open(const char *path, int flags, __u32 mode) {
+int open(const char *path, int flags, uint32_t mode) {
     return open64(path, flags, mode);
 }
 
@@ -51,18 +50,18 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
         real_avcodec_open2 = dlsym(RTLD_NEXT, "avcodec_open2");
     }
 
-    if (codec && is_h264_sw_decoder(codec) && current_device != DEVICE_TYPE_NONE) {
-        avcodec_free_context(&avctx); // Annihilate any previous references like get_format and get_buffer2, for safety.
-        if (current_device == DEVICE_TYPE_V4L2) {
+    if (codec && is_h264_sw_decoder(codec) && device->type != NONE) {
+        avcodec_free_context(&avctx); // Annihilate any previous references like get_format and get_buffer2.
+        if (device->type == V4L2) { // The above might cause pointer integrity errors in the future, but it's okay for now.
             codec = avcodec_find_decoder_by_name("h264_v4l2m2m");
             avctx = avcodec_alloc_context3(codec);
             av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_DRM, "/dev/dri/card0", NULL, 0);
             avctx->get_format = get_drm_format;
             avctx->pix_fmt = AV_PIX_FMT_DRM_PRIME;
-        } else if (current_device == DEVICE_TYPE_ROCKCHIP) {
+        } else if (device->type == ROCKCHIP) {
             codec = avcodec_find_decoder_by_name("h264_rkmpp");
             avctx = avcodec_alloc_context3(codec);
-        } else if (current_device == DEVICE_TYPE_ALLWINNER) {
+        } else if (device->type == ALLWINNER) {
             codec = avcodec_find_decoder_by_name("h264_cedar");
             avctx = avcodec_alloc_context3(codec);
             avctx->get_format = get_drm_format;
@@ -70,13 +69,12 @@ int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **op
         } else {
             codec = avcodec_find_decoder_by_name("h264");
             avctx = avcodec_alloc_context3(codec);
-            if (current_device == DEVICE_TYPE_V4L2REQ) {
+            if (device->type == V4L2REQ) {
                 av_hwdevice_ctx_create(&avctx->hw_device_ctx, AV_HWDEVICE_TYPE_V4L2REQUEST, NULL, NULL, 0);
             }
         }
-        // ALWAYS set these values if we're replacing the codec, some can't handle having no valid resolution at init.
-        avctx->width = padded_width;
-        avctx->height = padded_height;
+        avctx->width = device->width;
+        avctx->height = device->height;
     }
     return real_avcodec_open2(avctx, codec, options);
 }
@@ -86,7 +84,7 @@ int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame) {
         real_avcodec_receive_frame = dlsym(RTLD_NEXT, "avcodec_receive_frame");
     }
 
-    if (avctx->codec->type == AVMEDIA_TYPE_VIDEO && current_device != DEVICE_TYPE_NONE) {
+    if (avctx->codec->type == AVMEDIA_TYPE_VIDEO && device->type != NONE) {
         int ret = real_avcodec_receive_frame(avctx, frame);
         if (ret < 0) {
             return ret;
@@ -115,8 +113,13 @@ AVBufferRef *av_buffer_ref(const AVBufferRef *buf) {
     // HACK: And this because Steam Link tries to ref a buffer that WILL NEVER EXIST?????
     //       I'm not even sure how it's NORMALLY supposed to work without this honestly.
     //       So this really sucks to do, but we can't change Steam Link's code...
+    static bool notified = false;
     if (!buf){
-        return 0;
+        if (!notified) {
+            fprintf(stderr, "NOTICE: Hooked app tried to call av_buffer_ref(NULL) at least once - Returning NULL to prevent fault\n")
+            notified = true;
+        }
+        return NULL;
     }
 
     return real_av_buffer_ref(buf);
