@@ -5,16 +5,14 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
-hdcd_device_t device;
+int open(const char *path, int flags, uint32_t mode);
 
-int open(const char *path, int flags, __u32 mode);
-
-void buffer_pool_init(display_buf_t *pool, size_t size, AVCodecContext *avctx) {
+void buffer_pool_init(display_buf_t *pool, size_t size) {
     int drm_fd = open("/dev/dri/card0", O_RDWR, 0);
     for (int i = 0; i < MAX_POOL_SIZE; i++) {
         struct drm_mode_create_dumb create = {
-            .width = padded_width,
-            .height = padded_height,
+            .width = device.width,
+            .height = device.height,
             .bpp = 32,
         };
         if (ioctl(drm_fd, DRM_IOCTL_MODE_CREATE_DUMB, &create)) {
@@ -40,7 +38,7 @@ void buffer_pool_init(display_buf_t *pool, size_t size, AVCodecContext *avctx) {
     }
 }
 
-display_buf_t *buffer_pool_acquire(struct dma_pool *pool) {
+display_buf_t *buffer_pool_acquire(display_buf_t *pool) {
     for (int i = 0; i < MAX_POOL_SIZE; i++) {
         if (!pool[i].in_use) {
             pool[i].in_use = true;

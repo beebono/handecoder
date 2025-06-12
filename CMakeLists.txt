@@ -94,7 +94,7 @@ set(HDCD_SOURCES
     src/hdcd.c
     src/hdcd-buffer.c
     src/hdcd-export.c
-    src/hdcd-hook.c
+    src/hdcd-hooks.c
 )
 
 add_library(avcodec SHARED IMPORTED)

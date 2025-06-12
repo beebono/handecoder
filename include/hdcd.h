@@ -39,6 +39,4 @@ typedef struct {
 
 extern hdcd_dev_t device;
 
-int open(const char *path, int flags, uint32_t mode);
-
 #endif // HDCD_H_

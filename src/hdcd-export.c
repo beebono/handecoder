@@ -11,6 +11,11 @@ static struct SwsContext *sws_ctx = NULL;
 static display_buf_t *pool = NULL;
 static bool pool_initialized = false;
 
+void buffer_pool_init(display_buf_t *pool, size_t size);
+display_buf_t *buffer_pool_acquire(display_buf_t *pool);
+void buffer_used(void *opaque, uint8_t *data);
+void buffer_pool_cleanup(display_buf_t *pool);
+
 static AVDRMFrameDescriptor *export_rgb(const AVFrame *frame, display_buf_t *buffer) {
     int width = frame->width;
     int height = frame->height;
@@ -86,14 +91,13 @@ void yuv2drm(const AVFrame *src, AVFrame *dst) {
     int width = src->width;
     int height = src->height;
 
-    if (current_device == DEVICE_TYPE_ALLWINNER) {
+    if (device.type == ALLWINNER) {
         // TODO: Add libtwig support via twig.h
     }
 
-
     if (!pool_initialized) {
         size_t total_size;
-        if (needs_rgb)
+        if (device.needs_rgb)
             total_size = av_image_get_buffer_size(AV_PIX_FMT_0RGB32, width, height, 32);
         else
             total_size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, width, height, 32);
@@ -102,10 +106,10 @@ void yuv2drm(const AVFrame *src, AVFrame *dst) {
         buffer_pool_init(pool, total_size);
         pool_initialized = true;
     }
-    display_buf_t *buffer = buffer_pool_acquire(&pool);
+    display_buf_t *buffer = buffer_pool_acquire(pool);
 
     AVDRMFrameDescriptor *desc;
-    if (needs_rgb)
+    if (device.needs_rgb)
         desc = export_rgb(src, buffer);
     else
         desc = export_yuv(src, buffer);
@@ -120,8 +124,6 @@ void yuv2drm(const AVFrame *src, AVFrame *dst) {
     dst->data[0] = (uint8_t*)desc;
     dst->buf[0] = av_buffer_create((uint8_t*)desc, sizeof(*desc), buffer_used, buffer, 0);
 }
-
-void buffer_pool_cleanup(display_buf_t *pool);
 
 void hdcd_export_cleanup(void) {
     if (sws_ctx) {
